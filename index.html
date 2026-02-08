@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guitar Scales</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #0f172a;
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+
+    .app {
+      max-width: 1100px;
+      width: 100%;
+      background: #111827;
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.45);
+      display: grid;
+      gap: 24px;
+    }
+
+    header {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+
+    p {
+      margin: 0;
+      color: #cbd5f5;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      background: #1f2937;
+      padding: 16px;
+      border-radius: 16px;
+    }
+
+    label {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #9aa7c7;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #f8fafc;
+      font-size: 1rem;
+    }
+
+    .scale-notes {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .scale-note {
+      background: #0ea5e9;
+      color: #0f172a;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .fretboard {
+      display: grid;
+      grid-template-columns: 80px repeat(13, minmax(0, 1fr));
+      gap: 4px;
+      background: #1e293b;
+      padding: 16px;
+      border-radius: 16px;
+    }
+
+    .fret-number,
+    .string-label {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      text-align: center;
+      padding: 6px 0;
+    }
+
+    .string-label {
+      font-weight: 600;
+    }
+
+    .fret {
+      border: 1px solid #334155;
+      border-radius: 8px;
+      min-height: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-weight: 600;
+      transition: 0.2s ease;
+    }
+
+    .fret.scale-note {
+      background: #f59e0b;
+      color: #0f172a;
+      box-shadow: inset 0 0 0 2px #fde68a;
+    }
+
+    .nut-line {
+      border-left: 3px solid #ef4444;
+    }
+
+    .fret.empty {
+      color: transparent;
+      border-color: #1f2937;
+      background: #0b1120;
+    }
+
+    @media (max-width: 900px) {
+      .fretboard {
+        grid-template-columns: 70px repeat(13, minmax(28px, 1fr));
+      }
+
+      .fret {
+        min-height: 38px;
+        font-size: 0.85rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Guitar Scale Explorer</h1>
+      <p>Select a root and scale type to see every note across the neck.</p>
+    </header>
+
+    <section class="controls">
+      <div>
+        <label for="rootSelect">Root note</label>
+        <select id="rootSelect"></select>
+      </div>
+      <div>
+        <label for="scaleSelect">Scale type</label>
+        <select id="scaleSelect">
+          <option value="major">Major</option>
+          <option value="minor">Minor (Natural)</option>
+          <option value="seventh">7th (Dominant)</option>
+          <option value="ninth">9th (Dominant)</option>
+          <option value="maj7">Maj7</option>
+        </select>
+      </div>
+      <div>
+        <label>Scale notes</label>
+        <div id="scaleNotes" class="scale-notes"></div>
+      </div>
+    </section>
+
+    <section id="fretboard" class="fretboard" aria-label="Guitar fretboard"></section>
+  </div>
+
+  <script>
+    const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "H"];
+    const scales = {
+      major: [0, 2, 4, 5, 7, 9, 11],
+      minor: [0, 2, 3, 5, 7, 8, 10],
+      seventh: [0, 2, 4, 7, 10],
+      ninth: [0, 2, 4, 7, 10],
+      maj7: [0, 2, 4, 7, 11]
+    };
+    const tuning = ["E", "H", "G", "D", "A", "E"]; // Top to bottom
+    const fretCount = 12;
+
+    const rootSelect = document.getElementById("rootSelect");
+    const scaleSelect = document.getElementById("scaleSelect");
+    const scaleNotesEl = document.getElementById("scaleNotes");
+    const fretboard = document.getElementById("fretboard");
+
+    function buildRootOptions() {
+      notes.forEach((note) => {
+        const option = document.createElement("option");
+        option.value = note;
+        option.textContent = note;
+        rootSelect.appendChild(option);
+      });
+      rootSelect.value = "C";
+    }
+
+    function getScaleNotes(root, type) {
+      const rootIndex = notes.indexOf(root);
+      return scales[type].map((interval) => notes[(rootIndex + interval) % notes.length]);
+    }
+
+    function renderScaleNotes(scaleNotes) {
+      scaleNotesEl.innerHTML = "";
+      scaleNotes.forEach((note) => {
+        const chip = document.createElement("div");
+        chip.className = "scale-note";
+        chip.textContent = note;
+        scaleNotesEl.appendChild(chip);
+      });
+    }
+
+    function buildFretNumbers() {
+      fretboard.appendChild(document.createElement("div"));
+      for (let fret = 0; fret <= fretCount; fret += 1) {
+        const number = document.createElement("div");
+        number.className = `fret-number${fret === 1 ? " nut-line" : ""}`;
+        number.textContent = fret;
+        fretboard.appendChild(number);
+      }
+    }
+
+    function renderFretboard(scaleNotes) {
+      fretboard.innerHTML = "";
+      buildFretNumbers();
+
+      tuning.forEach((stringNote) => {
+        const label = document.createElement("div");
+        label.className = "string-label";
+        label.textContent = stringNote;
+        fretboard.appendChild(label);
+
+        const openIndex = notes.indexOf(stringNote);
+        for (let fret = 0; fret <= fretCount; fret += 1) {
+          const note = notes[(openIndex + fret) % notes.length];
+          const cell = document.createElement("div");
+          const isInScale = scaleNotes.includes(note);
+          const nutClass = fret === 1 ? " nut-line" : "";
+          cell.className = `fret ${isInScale ? "scale-note" : "empty"}${nutClass}`;
+          cell.textContent = isInScale ? note : "";
+          fretboard.appendChild(cell);
+        }
+      });
+    }
+
+    function updateView() {
+      const root = rootSelect.value;
+      const type = scaleSelect.value;
+      const scaleNotes = getScaleNotes(root, type);
+      renderScaleNotes(scaleNotes);
+      renderFretboard(scaleNotes);
+    }
+
+    buildRootOptions();
+    rootSelect.addEventListener("change", updateView);
+    scaleSelect.addEventListener("change", updateView);
+    updateView();
+  </script>
+</body>
+</html>
