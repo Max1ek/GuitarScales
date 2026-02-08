@@ -159,7 +159,12 @@
       <h1>Guitar Scale Explorer</h1>
       <p>Select a root and scale type to see every note across the neck.</p>
     </header>
-
+	
+	<section class="controls">
+	Major    w w h w w w h</br>
+	Minor    w h w w h w w</br>
+	mPent    wh w w wh w
+	</section>
     <section class="controls">
       <div>
         <label for="rootSelect">Root note</label>
@@ -169,10 +174,10 @@
         <label for="scaleSelect">Scale type</label>
         <select id="scaleSelect">
           <option value="major">Major</option>
-          <option value="minor">Minor (Natural)</option>
-          <option value="seventh">7th (Dominant)</option>
-          <option value="ninth">9th (Dominant)</option>
+          <option value="minor">Minor (Natural)</option>         
           <option value="maj7">Maj7</option>
+		  <option value="maj9">Maj9</option>
+		  <option value="minorPenta">Minor Pentatonic</option>
         </select>
       </div>
       <div>
@@ -186,61 +191,61 @@
 
   <script>
     const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "H"];
-    const scales = {
-      major: [0, 2, 4, 5, 7, 9, 11],
-      minor: [0, 2, 3, 5, 7, 8, 10],
-      seventh: [0, 2, 4, 7, 10],
-      ninth: [0, 2, 4, 7, 10],
-      maj7: [0, 2, 4, 7, 11]
-    };
-    const tuning = ["E", "H", "G", "D", "A", "E"]; // Top to bottom
-    const fretCount = 12;
+const scales = {
+    major: [0, 2, 4, 5, 7, 9, 11],
+    minor: [0, 2, 3, 5, 7, 8, 10],
+    maj7: [0, 4, 7, 11],
+    maj9: [0, 4, 7, 11, 14],
+	minorPenta: [0,3,5,7,10]
+};
+const tuning = ["E", "H", "G", "D", "A", "E"]; // Top to bottom
+const fretCount = 12;
 
-    const rootSelect = document.getElementById("rootSelect");
-    const scaleSelect = document.getElementById("scaleSelect");
-    const scaleNotesEl = document.getElementById("scaleNotes");
-    const fretboard = document.getElementById("fretboard");
+const rootSelect = document.getElementById("rootSelect");
+const scaleSelect = document.getElementById("scaleSelect");
+const scaleNotesEl = document.getElementById("scaleNotes");
+const fretboard = document.getElementById("fretboard");
 
-    function buildRootOptions() {
-      notes.forEach((note) => {
+function buildRootOptions() {
+    notes.forEach((note) => {
         const option = document.createElement("option");
         option.value = note;
         option.textContent = note;
         rootSelect.appendChild(option);
-      });
-      rootSelect.value = "C";
-    }
+    });
+    rootSelect.value = "C";
+}
 
-    function getScaleNotes(root, type) {
-      const rootIndex = notes.indexOf(root);
-      return scales[type].map((interval) => notes[(rootIndex + interval) % notes.length]);
-    }
+function getScaleNotes(root, type) {
+    const rootIndex = notes.indexOf(root);
+    return scales[type].map((interval) => notes[(rootIndex + interval) % notes.length]);
+}
 
-    function renderScaleNotes(scaleNotes) {
-      scaleNotesEl.innerHTML = "";
-      scaleNotes.forEach((note) => {
+function renderScaleNotes(scaleNotes) {
+    scaleNotesEl.innerHTML = "";
+    scaleNotes.forEach((note) => {
         const chip = document.createElement("div");
         chip.className = "scale-note";
         chip.textContent = note;
         scaleNotesEl.appendChild(chip);
-      });
-    }
+    });
+}
 
-    function buildFretNumbers() {
-      fretboard.appendChild(document.createElement("div"));
-      for (let fret = 0; fret <= fretCount; fret += 1) {
+function buildFretNumbers() {
+    fretboard.appendChild(document.createElement("div"));
+    for (let fret = 0; fret <= fretCount; fret += 1) {
         const number = document.createElement("div");
         number.className = `fret-number${fret === 1 ? " nut-line" : ""}`;
         number.textContent = fret;
         fretboard.appendChild(number);
-      }
     }
+}
 
-    function renderFretboard(scaleNotes) {
-      fretboard.innerHTML = "";
-      buildFretNumbers();
+function renderFretboard(scaleNotes) {
+    fretboard.innerHTML = "";
+    buildFretNumbers();
 
-      tuning.forEach((stringNote) => {
+    tuning.forEach((stringNote) => {
         const label = document.createElement("div");
         label.className = "string-label";
         label.textContent = stringNote;
@@ -248,29 +253,29 @@
 
         const openIndex = notes.indexOf(stringNote);
         for (let fret = 0; fret <= fretCount; fret += 1) {
-          const note = notes[(openIndex + fret) % notes.length];
-          const cell = document.createElement("div");
-          const isInScale = scaleNotes.includes(note);
-          const nutClass = fret === 1 ? " nut-line" : "";
-          cell.className = `fret ${isInScale ? "scale-note" : "empty"}${nutClass}`;
-          cell.textContent = isInScale ? note : "";
-          fretboard.appendChild(cell);
+            const note = notes[(openIndex + fret) % notes.length];
+            const cell = document.createElement("div");
+            const isInScale = scaleNotes.includes(note);
+            const nutClass = fret === 1 ? " nut-line" : "";
+            cell.className = `fret ${isInScale ? "scale-note" : "empty"}${nutClass}`;
+            cell.textContent = isInScale ? note : "";
+            fretboard.appendChild(cell);
         }
-      });
-    }
+    });
+}
 
-    function updateView() {
-      const root = rootSelect.value;
-      const type = scaleSelect.value;
-      const scaleNotes = getScaleNotes(root, type);
-      renderScaleNotes(scaleNotes);
-      renderFretboard(scaleNotes);
-    }
+function updateView() {
+    const root = rootSelect.value;
+    const type = scaleSelect.value;
+    const scaleNotes = getScaleNotes(root, type);
+    renderScaleNotes(scaleNotes);
+    renderFretboard(scaleNotes);
+}
 
-    buildRootOptions();
-    rootSelect.addEventListener("change", updateView);
-    scaleSelect.addEventListener("change", updateView);
-    updateView();
+buildRootOptions();
+rootSelect.addEventListener("change", updateView);
+scaleSelect.addEventListener("change", updateView);
+updateView();
   </script>
 </body>
 </html>
